@@ -1,0 +1,61 @@
+# =========================
+# Unity generated folders
+# =========================
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# =========================
+# Unity auto-generated files
+# =========================
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.unitypackage
+
+# Unity cache
+/.vs/
+/.vscode/
+.idea/
+.gradle/
+
+# Rider / JetBrains
+*.sln.iml
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Crash reports
+sysinfo.txt
+
+# =========================================
+# Keep only source + project settings in git
+# =========================================
+# Do NOT ignore these:
+#!/[Aa]ssets/
+#!/[Pp]ackages/
+#!/[Pp]roject[Ss]ettings/
+
+# =========================
+# Optional: Addressables / Asset bundles output
+# =========================
+/[Aa]ssets/[Aa]sset[Bb]undles*/
