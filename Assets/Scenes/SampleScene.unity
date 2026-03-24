@@ -249,9 +249,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   speed: 7
+  sprintSpeed: 10
   gravity: -9.8
   jumpHeight: 2
   pushForce: 1
+  kickRange: 2
+  kickForce: 8
+  kickUpwardBoost: 1
+  kickCoolDown: 0.2
+  ballLayer:
+    serializedVersion: 2
+    m_Bits: 4294967295
 --- !u!143 &19919547
 CharacterController:
   m_ObjectHideFlags: 0
@@ -1471,7 +1479,7 @@ GameObject:
   - component: {fileID: 2007323960}
   - component: {fileID: 2007323959}
   - component: {fileID: 2007323963}
-  m_Layer: 0
+  m_Layer: 6
   m_Name: Ball
   m_TagString: Untagged
   m_Icon: {fileID: 0}
