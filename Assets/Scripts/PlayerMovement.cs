@@ -19,13 +19,20 @@ public class PlayerMovement : MonoBehaviour
     public float pushForce = 2.5f;
 
     public float kickRange = 2.0f;
-    public float kickForce = 8.0f;
+    public float kickForce = 8.0f; // Tap force (minimum)
+    public float maxKickForce = 16.0f; // Fully charged force
+    public float kickChargeTime = 1.0f; // Seconds to reach maxKickForce
+    public AnimationCurve kickChargeCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
     public float kickUpwardBoost = 1.0f;
 
     public float kickCoolDown = 0.2f;
     public LayerMask ballLayer = ~0;
+    public Rigidbody ballRigidbody;
+    public float ballResetForwardOffset = 1.25f;
+    public float ballResetUpOffset = 0.25f;
 
     private float nextKickTime;
+    private float kickPressTime = -1f;
 
     void Awake()
     {
@@ -35,6 +42,13 @@ public class PlayerMovement : MonoBehaviour
         // Replace "Player" with your actual Action Map name if different
         controls.Player.Move.performed += ctx => moveInput = ctx.ReadValue<Vector2>();
         controls.Player.Move.canceled += ctx => moveInput = Vector2.zero;
+
+        // Charged kick: start charging on press, kick on release.
+        controls.Player.Attack.started += _ => kickPressTime = Time.time;
+        controls.Player.Attack.canceled += _ => TryKickCharged();
+
+        // Reset ball: bind this action to a key in your Input Actions (e.g. "R").
+        controls.Player.Interact.performed += _ => ResetBallInFront();
     }
 
     void OnEnable()
@@ -78,25 +92,60 @@ public class PlayerMovement : MonoBehaviour
         Vector3 aimDirection = GetKickAimDirection(aimOrigin);
         Debug.DrawRay(aimOrigin, aimDirection * kickRange, Color.red);
 
-        if (controls.Player.Attack.triggered && Time.time >= nextKickTime)
+    }
+
+    private void TryKickCharged()
+    {
+        if (kickPressTime < 0f)
+            return;
+
+        // Enforce cooldown at release time.
+        if (Time.time < nextKickTime)
         {
-            nextKickTime = Time.time + kickCoolDown;
-
-            Vector3 origin = aimOrigin;
-            Vector3 direction = aimDirection;
-
-            if (Physics.Raycast(origin, direction, out RaycastHit hit, kickRange, ballLayer))
-            {
-                Rigidbody rb = hit.collider.attachedRigidbody;
-                if (rb != null && !rb.isKinematic)
-                {
-                    Vector3 kickDir = direction.normalized + Vector3.up * kickUpwardBoost;
-                    rb.AddForce(kickDir.normalized * kickForce, ForceMode.Impulse);
-                }
-            }
-
-            Debug.DrawRay(origin, direction * kickRange, Color.yellow, 0.2f);
+            kickPressTime = -1f;
+            return;
         }
+
+        nextKickTime = Time.time + kickCoolDown;
+
+        float heldTime = Time.time - kickPressTime;
+        kickPressTime = -1f;
+
+        float t = (kickChargeTime <= 0f) ? 1f : Mathf.Clamp01(heldTime / kickChargeTime);
+        float curveT = Mathf.Clamp01(kickChargeCurve.Evaluate(t));
+        float chargedForce = Mathf.Lerp(kickForce, maxKickForce, curveT);
+
+        Vector3 origin = GetCapsuleBottomWorldPoint();
+        Vector3 direction = GetKickAimDirection(origin);
+
+        if (Physics.Raycast(origin, direction, out RaycastHit hit, kickRange, ballLayer))
+        {
+            Rigidbody rb = hit.collider.attachedRigidbody;
+            if (rb != null && !rb.isKinematic)
+            {
+                Vector3 kickDir = direction.normalized + Vector3.up * kickUpwardBoost;
+                rb.AddForce(kickDir.normalized * chargedForce, ForceMode.Impulse);
+            }
+        }
+
+        Debug.DrawRay(origin, direction * kickRange, Color.yellow, 0.2f);
+    }
+
+    private void ResetBallInFront()
+    {
+        if (ballRigidbody == null)
+            return;
+
+        Vector3 origin = GetCapsuleBottomWorldPoint();
+        Vector3 forwardFlat = transform.forward;
+        forwardFlat.y = 0f;
+        forwardFlat = forwardFlat.sqrMagnitude > 0.0001f ? forwardFlat.normalized : Vector3.forward;
+
+        Vector3 targetPos = origin + forwardFlat * ballResetForwardOffset + Vector3.up * ballResetUpOffset;
+
+        ballRigidbody.position = targetPos;
+        ballRigidbody.linearVelocity = Vector3.zero;
+        ballRigidbody.angularVelocity = Vector3.zero;
     }
 
     private Vector3 GetCapsuleBottomWorldPoint()
